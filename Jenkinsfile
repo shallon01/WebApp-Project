@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -19,15 +20,31 @@ pipeline {
                 sh 'npm test'
             }
         }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t webapp-project:latest .'
+            }
+        }
+
+        stage('Deploy Docker Container') {
+            steps {
+                sh '''
+                    docker stop webapp-container || true
+                    docker rm webapp-container || true
+                    docker run -d --name webapp-container -p 3001:3000 webapp-project:latest
+                '''
+            }
+        }
     }
 
     post {
         success {
-            echo 'Build and tests completed successfully!'
+            echo 'Build, tests, and Docker deployment completed successfully!'
         }
 
         failure {
-            echo 'Build or tests failed!'
+            echo 'Build, tests, or Docker deployment failed!'
         }
 
         always {
